@@ -19,12 +19,6 @@
 4. 支持分区表和非分区表。
 6. 支持spark sql 和 hive sql语法和函数
 
-#### odps语句限制条件：
-1. create table和 insert sql的select 部分不能支持*，需要明确指定输出列的名称，例如：select * from user 不支持。
-2. insert sql的select输出列名称必须与写入表字段名称一致，可以通过别名保持一致，例如：select substr(ds, 1, 8) as ds from user。
-3. 对于分区表，where部分需要指定分区范围，明确在某一时间段范围内，不支持like匹配，例如：where ds<='20161011' 需要加上 ds>='20161010'。
-4. 不支持select语句，执行没有意义。
-
 #### 定制算法：
 
 例如定制核概率估计算法：
@@ -71,7 +65,7 @@ class KernelDensityAlg extends Algorithm {
                 }
 
                 arrBuf.toArray
-            })
+d            })
 
             val stat = Statistics.colStats(labelRdd.map((values: Array[Double]) => Vectors.dense(values)))
 
@@ -161,6 +155,24 @@ class KernelDensityAlg extends Algorithm {
         context.sqlContext.sql(sql).collect()
     }
 }
+```
+
+运行核概率估计算法：
+```sql
+--由于触发两个action，优化缓df数据
+set spark.cache.table.tb_tmp = true;
+create table tb_tmp LIFECYCLE 2 as
+select name, address, ds from tb1
+where ds = '201610101015';
+
+insert overwrite tb_result_1 partition(ds)
+select * from tb_tmp left a outer join tb_info b on a.name = b.name;
+
+--保存临时表
+set spark.insert.table.tb_result_2 = true;
+create table tb_result_2 LIFECYCLE 11 as
+select name, count(1) from tb_tmp 
+
 ```
 
 运行核概率估计算法：
