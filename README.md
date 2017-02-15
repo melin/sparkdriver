@@ -168,7 +168,7 @@ where ds = '201610101015';
 insert overwrite tb_result_1 partition(ds)
 select * from tb_tmp left a outer join tb_info b on a.name = b.name;
 
---保存临时表
+--保存临时表, 根据dataframe 信息创建表信息
 set spark.insert.table.tb_result_2 = true;
 create table tb_result_2 LIFECYCLE 11 as
 select name, count(1) from tb_tmp 
