@@ -166,18 +166,25 @@ class KernelDensityAlg extends Algorithm {
 运行核概率估计算法：
 ```sql
 -- 由于会触发多次action，指定缓存spark临时表，加快计算速度
-set spark.cache.table.tdl_spark_event_tb_order_create_tmp_1 = true;
-create table tdl_spark_event_tb_order_create_tmp_1 LIFECYCLE 11 as
+set spark.cache.table.tdl_spark_event_tb_order_create_tmp = true;
+create table tdl_spark_event_tb_order_create_tmp LIFECYCLE 11 as
 select selid from tdl_spark_event_tb_order_create
 where ds = '201610101015';
 
--- 基于tdl_spark_event_tb_order_create_tmp表数据，计算核概率密度估计
-set spark.algorithm.table.tdl_spark_event_tb_order_create_tmp=stat_KDE;
--- featureColNames：计算特征变量，intervalNum：点分布数量，默认100，outputTableName：指定数据表, lifecycle: 指定数据表生命周期
-set spark.algorithm.config.tdl_spark_event_tb_order_create_tmp='featureColNames=variable;intervalNum=100;labelColName=label;outputTableName=tdl_spark_KDE_result;lifecycle=2';
+CREATE TABLE tdl_spark_KDE_result
+(
+    label string(255),
+    selid double
+)
+COMMENT 'result table'
+LIFECYCLE 7;
 
-create table tdl_spark_event_tb_order_create_tmp LIFECYCLE 11 as
-select cast(selid as double) as selid from tdl_spark_event_tb_order_create_tmp_1
+-- 基于tdl_spark_event_tb_order_create_tmp表数据，计算核概率密度估计
+-- algorithm：算法名称 featureColNames：计算特征变量，intervalNum：点分布数量，默认100，outputTableName：指定数据表, lifecycle: 指定数据表生命周期
+set spark.algorithm.config.tdl_spark_event_tb_order_create_kdf='algorithm=stat_KDE;featureColNames=selid;intervalNum=100;labelColName=label;outputTableName=tdl_spark_KDE_result;lifecycle=2';
+
+create table tdl_spark_event_tb_order_create_kdf LIFECYCLE 11 as
+select cast(selid as double) as selid from tdl_spark_event_tb_order_create_tmp
 ```
 
 #### 计划功能：
