@@ -159,24 +159,6 @@ d            })
 
 运行核概率估计算法：
 ```sql
---由于触发两个action，优化缓df数据
-set spark.cache.table.tb_tmp = true;
-create table tb_tmp LIFECYCLE 2 as
-select name, address, ds from tb1
-where ds = '201610101015';
-
-insert overwrite tb_result_1 partition(ds)
-select * from tb_tmp left a outer join tb_info b on a.name = b.name;
-
---保存临时表, 根据dataframe 信息创建表信息
-set spark.insert.table.tb_result_2 = true;
-create table tb_result_2 LIFECYCLE 11 as
-select name, count(1) from tb_tmp 
-
-```
-
-运行核概率估计算法：
-```sql
 -- 由于会触发多次action，指定缓存spark临时表，加快计算速度
 set spark.cache.table.tdl_spark_event_tb_order_create_tmp = true;
 create table tdl_spark_event_tb_order_create_tmp LIFECYCLE 11 as
@@ -199,6 +181,18 @@ create table tdl_spark_event_tb_order_create_kdf LIFECYCLE 11 as
 select cast(selid as double) as selid from tdl_spark_event_tb_order_create_tmp
 ```
 
-#### 计划功能：
-1. 调用readTable方法时，transfer 能够获取分区字段值（需求比较紧急）；
-2. kryo 序列化支持（减少缓存内存使用，提高序列化速度）；
+多sql语句实例：
+```sql
+--由于触发两个action，优化缓df数据
+set spark.cache.table.tb_tmp = true;
+create table tb_tmp LIFECYCLE 2 as
+select name, address, ds from tb1
+where ds = '201610101015';
+
+insert overwrite tb_result_1 partition(ds)
+select * from tb_tmp left a outer join tb_info b on a.name = b.name;
+
+--保存临时表, 根据dataframe 信息创建表信息
+set spark.insert.table.tb_result_2 = true;
+create table tb_result_2 LIFECYCLE 11 as
+select name, count(1) from tb_tmp 
